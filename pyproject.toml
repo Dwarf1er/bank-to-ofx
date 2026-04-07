@@ -1,0 +1,15 @@
+[project]
+name = "bank-to-ofx"
+version = "0.1.0"
+description = "Convert bank statements from Desjardins and Wealthsimple into OFX per account"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "python-dateutil>=2.9.0.post0",
+]
+
+[tool.uv]
+package = true
+
+[project.scripts]
+bank-to-ofx = "bank_to_ofx.cli:main"
