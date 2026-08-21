@@ -29,7 +29,9 @@ class DesjardinsParser:
                     date = datetime.strptime(row[3], "%Y/%m/%d")
                     seq = row[4].strip()
                     memo = row[5].strip()
-                    amount = float(row[8])
+                    debit = row[7].strip()
+                    credit = row[8].strip()
+                    amount = -float(debit) if debit else float(credit)
                     balance = float(row[13]) if row[13] else None
                 except Exception:
                     # skip malformed rows
