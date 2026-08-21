@@ -5,6 +5,7 @@ description = "Convert bank statements from Desjardins and Wealthsimple into OFX
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "pdfplumber>=0.11.10",
     "python-dateutil>=2.9.0.post0",
 ]
 

@@ -18,7 +18,8 @@
 `bank-to-ofx` is a command-line tool to convert various bank statement formats into OFX files for personal finance software like HomeBank or GnuCash.
 
 It currently supports:
-* Desjardins CSV
+* Desjardins CSV (checking/savings accounts)
+* Desjardins PDF (credit card statements)
 * Wealthsimple CSV
 
 The tool is designed to be extensible so that adding another parser for different financial institutions is easy.
@@ -65,15 +66,21 @@ uv run bank-to-ofx --help
 uv run bank-to-ofx <bank> <path_to_statement> [-o output_dir]
 ```
 
-* `<bank>`: bank identifier, e.g., desjardins, wealthsimple
+* `<bank>`: bank identifier, e.g., desjardins, desjardins-credit, wealthsimple
 * `<path_to_statement>`: path to your bank's statement file
 * `-o output_dir`: optional output folder (default: `./output`)
 
 Examples:
 ```bash
 uv run bank-to-ofx desjardins ~/Downloads/releve.csv -o ~/bank-to-ofx-output
+uv run bank-to-ofx desjardins-credit ~/Downloads/releve-visa.pdf -o ~/bank-to-ofx-output
 uv run bank-to-ofx wealthsimple ~/Downloads/wealthsimple.csv
 ```
+
+Desjardins only offers CSV export for checking/savings accounts; credit card
+(Visa) statements are PDF-only. `desjardins-credit` extracts transactions
+directly from that PDF's text, so results may need double-checking against
+statement layout changes Desjardins introduces over time.
 
 The output folder will contain per-account OFX files named in kebab-case.
 

@@ -5,8 +5,9 @@ def format_ofx_date(dt: datetime) -> str:
     return dt.strftime("%Y%m%d000000")
 
 
-def generate_ofx(account_id, transactions):
+def generate_ofx(account_id, transactions, account_type="CHECKING"):
     now = datetime.now().strftime("%Y%m%d%H%M%S")
+    is_credit_card = account_type == "CREDITCARD"
 
     lines = []
 
@@ -26,17 +27,25 @@ def generate_ofx(account_id, transactions):
     lines.append("</SONRS>")
     lines.append("</SIGNONMSGSRSV1>")
 
-    lines.append("<BANKMSGSRSV1>")
-    lines.append("<STMTTRNRS>")
+    msgsrsv1_tag = "CREDITCARDMSGSRSV1" if is_credit_card else "BANKMSGSRSV1"
+    stmttrnrs_tag = "CCSTMTTRNRS" if is_credit_card else "STMTTRNRS"
+    stmtrs_tag = "CCSTMTRS" if is_credit_card else "STMTRS"
+    acctfrom_tag = "CCACCTFROM" if is_credit_card else "BANKACCTFROM"
+
+    lines.append(f"<{msgsrsv1_tag}>")
+    lines.append(f"<{stmttrnrs_tag}>")
     lines.append("<TRNUID>1")
     lines.append("<STATUS><CODE>0<SEVERITY>INFO</STATUS>")
-    lines.append("<STMTRS>")
+    lines.append(f"<{stmtrs_tag}>")
+    lines.append("<CURDEF>CAD")
 
-    lines.append("<BANKACCTFROM>")
-    lines.append("<BANKID>DESJARDINS")
+    lines.append(f"<{acctfrom_tag}>")
+    if not is_credit_card:
+        lines.append("<BANKID>DESJARDINS")
     lines.append(f"<ACCTID>{account_id}")
-    lines.append("<ACCTTYPE>CHECKING")
-    lines.append("</BANKACCTFROM>")
+    if not is_credit_card:
+        lines.append("<ACCTTYPE>CHECKING")
+    lines.append(f"</{acctfrom_tag}>")
 
     lines.append("<BANKTRANLIST>")
 
@@ -59,9 +68,9 @@ def generate_ofx(account_id, transactions):
         lines.append("</STMTTRN>")
 
     lines.append("</BANKTRANLIST>")
-    lines.append("</STMTRS>")
-    lines.append("</STMTTRNRS>")
-    lines.append("</BANKMSGSRSV1>")
+    lines.append(f"</{stmtrs_tag}>")
+    lines.append(f"</{stmttrnrs_tag}>")
+    lines.append(f"</{msgsrsv1_tag}>")
     lines.append("</OFX>")
 
     return "\n".join(lines)
