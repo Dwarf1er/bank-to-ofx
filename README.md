@@ -64,12 +64,13 @@ uv run bank-to-ofx --help
 ## Usage
 
 ```bash
-uv run bank-to-ofx <bank> <path_to_statement> [-o output_dir]
+uv run bank-to-ofx <bank> <path_to_statement>... [-o output_dir] [-m|--monthly]
 ```
 
 * `<bank>`: bank identifier, e.g., desjardins, desjardins-credit, wealthsimple
-* `<path_to_statement>`: path to your bank's statement file
+* `<path_to_statement>...`: one or more paths to your bank's statement files
 * `-o output_dir`: optional output folder (default: `./output`)
+* `-m, --monthly`: merge all given statements per account and split the result into one OFX file per calendar month (see [Splitting Statements into Calendar Months](#splitting-statements-into-calendar-months))
 
 Examples:
 ```bash
@@ -91,11 +92,21 @@ for the same account into the same folder won't overwrite each other.
 ## Splitting Statements into Calendar Months
 
 Credit card billing cycles rarely align with calendar months (e.g. Aug 20 –
-Sep 19), which is awkward for month-by-month bookkeeping. The `split-monthly`
-command takes one or more already-converted OFX files, merges their
-transactions per account, and re-splits them into one OFX file per calendar
-month — pulling together the tail end of one statement and the start of the
-next wherever a month is split across two of them.
+Sep 19), which is awkward for month-by-month bookkeeping. There are two ways
+to get one OFX file per calendar month, pulling together the tail end of one
+statement and the start of the next (and any number of statements in
+between) wherever a month is split across more than one of them:
+
+**Directly from statement files**, with `-m`/`--monthly` on the bank
+subcommand — pass all your statement files for one account in a single call:
+
+```bash
+uv run bank-to-ofx desjardins-credit ~/Downloads/releve-*.pdf --monthly -o ~/monthly
+```
+
+**From already-converted OFX files**, with the standalone `split-monthly`
+command — useful if you've already run each statement through `bank-to-ofx`
+separately, or have OFX files from somewhere else entirely:
 
 ```bash
 uv run bank-to-ofx split-monthly <path_to_ofx_file>... [-o output_dir]
@@ -108,9 +119,10 @@ uv run bank-to-ofx desjardins-credit ~/Downloads/releve-septembre.pdf -o ~/state
 uv run bank-to-ofx split-monthly ~/statements/*.ofx -o ~/monthly
 ```
 
-This produces one file per account per month, e.g. `<account>-2026-08.ofx`
-and `<account>-2026-09.ofx`, each containing every transaction dated within
-that month regardless of which source statement it came from.
+Both approaches produce one file per account per month, e.g.
+`<account>-2026-08.ofx` and `<account>-2026-09.ofx`, each containing every
+transaction dated within that month regardless of which source statement it
+came from.
 
 Note: `FITID`s are regenerated during both conversion and splitting, derived
 from each transaction's date rather than the source statement's own
