@@ -30,6 +30,7 @@ The tool is designed to be extensible so that adding another parser for differen
 
 * [Installation](#installation)
 * [Usage](#usage)
+* [Splitting Statements into Calendar Months](#splitting-statements-into-calendar-months)
 * [Adding Support for New Banks](#adding-support-for-new-banks)
 * [License](#license)
 
@@ -82,7 +83,40 @@ Desjardins only offers CSV export for checking/savings accounts; credit card
 directly from that PDF's text, so results may need double-checking against
 statement layout changes Desjardins introduces over time.
 
-The output folder will contain per-account OFX files named in kebab-case.
+The output folder will contain per-account OFX files named in kebab-case,
+suffixed with the transaction date range covered by that statement (e.g.
+`4540xxxxxxxx1234-20260820-20260915.ofx`), so converting several statements
+for the same account into the same folder won't overwrite each other.
+
+## Splitting Statements into Calendar Months
+
+Credit card billing cycles rarely align with calendar months (e.g. Aug 20 –
+Sep 19), which is awkward for month-by-month bookkeeping. The `split-monthly`
+command takes one or more already-converted OFX files, merges their
+transactions per account, and re-splits them into one OFX file per calendar
+month — pulling together the tail end of one statement and the start of the
+next wherever a month is split across two of them.
+
+```bash
+uv run bank-to-ofx split-monthly <path_to_ofx_file>... [-o output_dir]
+```
+
+Example:
+```bash
+uv run bank-to-ofx desjardins-credit ~/Downloads/releve-aout.pdf -o ~/statements
+uv run bank-to-ofx desjardins-credit ~/Downloads/releve-septembre.pdf -o ~/statements
+uv run bank-to-ofx split-monthly ~/statements/*.ofx -o ~/monthly
+```
+
+This produces one file per account per month, e.g. `<account>-2026-08.ofx`
+and `<account>-2026-09.ofx`, each containing every transaction dated within
+that month regardless of which source statement it came from.
+
+Note: `FITID`s are regenerated during both conversion and splitting, derived
+from each transaction's date rather than the source statement's own
+numbering — this keeps them unique when merging multiple statements and
+stable across re-runs, so most accounting software will recognize a repeat
+import as a duplicate instead of double-counting it.
 
 ## Adding Support for New Banks
 Create a new parser class in `bank_to_ofx/parsers/` implementing:
