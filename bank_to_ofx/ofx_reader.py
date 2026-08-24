@@ -2,7 +2,7 @@
 import re
 from datetime import datetime
 
-TAG_RE = re.compile(r"<([A-Za-z0-9.]+)>([^<\r\n]*)")
+TAG_RE = re.compile(r"<(/?[A-Za-z0-9.]+)>([^<\r\n]*)")
 
 
 def parse_ofx(text):
@@ -12,28 +12,24 @@ def parse_ofx(text):
 
     Tolerant of both SGML-style (no closing tag on leaf values, e.g.
     <TRNAMT>12.34) and XML-style (<TRNAMT>12.34</TRNAMT>) OFX, since it only
-    reads the value up to the next '<' or end of line.
+    reads the value up to the next '<' or end of line. Scans tags across the
+    whole text rather than line-by-line, since some banks (e.g. Tangerine)
+    emit the entire OFX body as a single unbroken line with no newlines
+    between tags at all.
     """
     accounts = {}
     current_account_id = None
     current_account_type = "CHECKING"
     current_txn = None
 
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
+    for match in TAG_RE.finditer(text):
+        tag, value = match.group(1).upper(), match.group(2).strip()
 
-        if line.startswith("<CCACCTFROM"):
-            current_account_type = "CREDITCARD"
-        elif line.startswith("<BANKACCTFROM"):
-            current_account_type = "CHECKING"
-
-        if line.startswith("<STMTTRN>"):
+        if tag == "STMTTRN":
             current_txn = {}
             continue
 
-        if line.startswith("</STMTTRN>"):
+        if tag == "/STMTTRN":
             if current_txn is not None and current_account_id and "date" in current_txn and "amount" in current_txn:
                 bucket = accounts.setdefault(
                     current_account_id,
@@ -46,10 +42,10 @@ def parse_ofx(text):
             current_txn = None
             continue
 
-        match = TAG_RE.match(line)
-        if not match:
-            continue
-        tag, value = match.group(1).upper(), match.group(2).strip()
+        if tag == "CCACCTFROM":
+            current_account_type = "CREDITCARD"
+        elif tag == "BANKACCTFROM":
+            current_account_type = "CHECKING"
 
         if current_txn is not None:
             if tag == "DTPOSTED":

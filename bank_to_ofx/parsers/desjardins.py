@@ -17,8 +17,7 @@ class DesjardinsParser:
             reader = csv.reader(f)
             rows = list(reader)
 
-            # skip first line (empty) and second line (header-like)
-            for row in rows[2:]:
+            for row in rows:
                 if not any(row):
                     continue
 
@@ -29,10 +28,22 @@ class DesjardinsParser:
                     date = datetime.strptime(row[3], "%Y/%m/%d")
                     seq = row[4].strip()
                     memo = row[5].strip()
-                    debit = row[7].strip()
-                    credit = row[8].strip()
-                    amount = -float(debit) if debit else float(credit)
                     balance = float(row[13]) if row[13] else None
+
+                    # The debit/credit value lands in a different column
+                    # depending on the row's folio type (e.g. "EOP" vs
+                    # "PR1"), so scan the columns between memo and balance
+                    # instead of assuming a fixed position. Odd column
+                    # indices hold debits, even ones hold credits.
+                    amount = None
+                    for i in range(6, 13):
+                        value = row[i].strip()
+                        if not value:
+                            continue
+                        amount = -float(value) if i % 2 == 1 else float(value)
+                        break
+                    if amount is None:
+                        continue
                 except Exception:
                     # skip malformed rows
                     continue

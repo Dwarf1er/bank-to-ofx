@@ -31,6 +31,7 @@ The tool is designed to be extensible so that adding another parser for differen
 * [Installation](#installation)
 * [Usage](#usage)
 * [Splitting Statements into Calendar Months](#splitting-statements-into-calendar-months)
+* [Anonymizing OFX Files](#anonymizing-ofx-files)
 * [Adding Support for New Banks](#adding-support-for-new-banks)
 * [License](#license)
 
@@ -129,6 +130,36 @@ from each transaction's date rather than the source statement's own
 numbering — this keeps them unique when merging multiple statements and
 stable across re-runs, so most accounting software will recognize a repeat
 import as a duplicate instead of double-counting it.
+
+## Anonymizing OFX Files
+
+If you run into a bug and want to share a sample statement without leaking
+real financial data, use `anonymize` to scrub an OFX file before attaching
+it anywhere:
+
+```bash
+uv run bank-to-ofx anonymize <path_to_ofx_file>... [-o output_dir] [--seed N]
+```
+
+This produces one OFX file per account with:
+* the account ID replaced with a placeholder (`ANONYMIZED`, or
+  `ANONYMIZED1`, `ANONYMIZED2`, ... if the input files cover more than one
+  account)
+* transaction memo/name replaced with a sequential placeholder
+  (`TRANSACTION 1`, `TRANSACTION 2`, ...)
+* amounts randomly scaled (sign preserved, so debits stay debits and
+  credits stay credits)
+* dates randomly shifted to a different day, but kept within the same
+  calendar month as the original — useful since `--monthly`/`split-monthly`
+  behavior depends on which month a transaction falls in
+
+Pass `--seed N` for reproducible output (e.g. when turning a bug report into
+a regression test fixture).
+
+Example:
+```bash
+uv run bank-to-ofx anonymize ~/bank-to-ofx-output/*.ofx -o ~/to-share
+```
 
 ## Adding Support for New Banks
 Create a new parser class in `bank_to_ofx/parsers/` implementing:
