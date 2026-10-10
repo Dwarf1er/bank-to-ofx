@@ -17,6 +17,7 @@ def anonymize_transactions(transactions, rng):
 
     for i, t in enumerate(anonymized, start=1):
         t["memo"] = f"TRANSACTION {i}"
+        t.pop("name", None)
 
     return anonymized
 

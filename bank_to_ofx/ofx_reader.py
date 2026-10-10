@@ -35,7 +35,8 @@ def parse_ofx(text):
                     current_account_id,
                     {"account_type": current_account_type, "transactions": []},
                 )
-                current_txn.setdefault("memo", "")
+                current_txn.setdefault("name", "")
+                current_txn.setdefault("memo", current_txn["name"])
                 current_txn.setdefault("seq", "")
                 current_txn.setdefault("balance", None)
                 bucket["transactions"].append(current_txn)
@@ -56,8 +57,8 @@ def parse_ofx(text):
                 current_txn["seq"] = value
             elif tag == "MEMO":
                 current_txn["memo"] = value
-            elif tag == "NAME" and not current_txn.get("memo"):
-                current_txn["memo"] = value
+            elif tag == "NAME":
+                current_txn["name"] = value
         elif tag == "ACCTID":
             current_account_id = value
 

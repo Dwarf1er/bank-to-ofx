@@ -63,7 +63,7 @@ def generate_ofx(account_id, transactions, account_type="CHECKING"):
         lines.append(f"<DTPOSTED>{format_ofx_date(t['date'])}")
         lines.append(f"<TRNAMT>{t['amount']}")
         lines.append(f"<FITID>{t['seq']}")
-        lines.append(f"<NAME>{t['memo'][:32]}")
+        lines.append(f"<NAME>{t.get('name') or t['memo'][:32]}")
         lines.append(f"<MEMO>{t['memo']}")
         lines.append("</STMTTRN>")
 
