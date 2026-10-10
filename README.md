@@ -20,7 +20,8 @@
 It currently supports:
 * Desjardins CSV (checking/savings accounts)
 * Desjardins PDF (credit card statements)
-* Wealthsimple CSV
+* Wealthsimple CSV (chequing)
+* Wealthsimple CSV (credit card)
 
 The tool is designed to be extensible so that adding another parser for different financial institutions is easy.
 
@@ -68,7 +69,7 @@ uv run bank-to-ofx --help
 uv run bank-to-ofx <bank> <path_to_statement>... [-o output_dir] [-m|--monthly]
 ```
 
-* `<bank>`: bank identifier, e.g., desjardins, desjardins-credit, wealthsimple
+* `<bank>`: bank identifier, e.g., desjardins, desjardins-credit, wealthsimple, wealthsimple-credit
 * `<path_to_statement>...`: one or more paths to your bank's statement files
 * `-o output_dir`: optional output folder (default: `./output`)
 * `-m, --monthly`: merge all given statements per account and split the result into one OFX file per calendar month (see [Splitting Statements into Calendar Months](#splitting-statements-into-calendar-months))
@@ -78,12 +79,22 @@ Examples:
 uv run bank-to-ofx desjardins ~/Downloads/releve.csv -o ~/bank-to-ofx-output
 uv run bank-to-ofx desjardins-credit ~/Downloads/releve-visa.pdf -o ~/bank-to-ofx-output
 uv run bank-to-ofx wealthsimple ~/Downloads/wealthsimple.csv
+uv run bank-to-ofx wealthsimple-credit ~/Downloads/wealthsimple-credit.csv
 ```
 
 Desjardins only offers CSV export for checking/savings accounts; credit card
 (Visa) statements are PDF-only. `desjardins-credit` extracts transactions
 directly from that PDF's text, so results may need double-checking against
 statement layout changes Desjardins introduces over time.
+
+Wealthsimple chequing (`wealthsimple`) and credit card (`wealthsimple-credit`)
+exports have different CSV columns, so they use separate subcommands. For the
+credit card CSV, transactions are dated by `transaction_date`, and whether one
+is a debit or a credit is decided by its `type` column rather than the sign of
+`amount`: types starting with payment, refund, return, credit, reward,
+cashback or reversal are credits, and everything else (e.g. `Purchase`) is a
+debit. If a type from your export lands on the wrong side, add it to
+`CREDIT_TYPES` in `bank_to_ofx/parsers/wealthsimple_credit.py`.
 
 The output folder will contain per-account OFX files named in kebab-case,
 suffixed with the transaction date range covered by that statement (e.g.
